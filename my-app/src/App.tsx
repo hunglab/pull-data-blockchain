@@ -91,7 +91,7 @@ const initialState: State = {
     helperText: "",
     isError: false,
     displayStatus: "block",
-    openInputForm: "",
+    openInputForm: "none",
     openDataTable: "none",
     searchInput: "",
     dataTable: [],
@@ -221,10 +221,10 @@ const Login = () => {
                 type: "setDisplayStatus",
                 payload: "none",
             });
-            // navigateTo();
-            // history.push("/ShowData");
-            // window.location.href("/ShowData");
-            // return <Redirect to="/ShowData" />;
+            dispatch({
+                type: "setOpenInputForm",
+                payload: "block",
+            });
         } else {
             dispatch({
                 type: "loginFailed",
@@ -378,7 +378,7 @@ const Login = () => {
                                     placeholder="Password"
                                     margin="normal"
                                     helperText={state.helperText}
-                                    onChange={handleSearchChange}
+                                    onChange={handlePasswordChange}
                                     onKeyPress={handleKeyPress}
                                 />
                             </Box>
@@ -400,7 +400,7 @@ const Login = () => {
                         </Item>
                     </Grid>
                     <Grid
-                        // display={!state.displayStatus}
+                        display={state.openInputForm}
                         item
                         xs={12}
                         sx={{
@@ -456,10 +456,23 @@ const Login = () => {
                                 </Button>
                             </Stack>
                             {/* <Typography
-                                display={state.openDataTable}
+                                display={state.openInputForm}
                                 component="p">
                                 {state.dataTable}
                             </Typography> */}
+                        </Item>
+                    </Grid>
+                    <Grid
+                        display={state.openDataTable}
+                        item
+                        xs={12}
+                        sx={{
+                            "& > :not(style)": {
+                                marginTop: "2rem",
+                                background: "#282c34",
+                            },
+                        }}>
+                        <Item>
                             <TableContainer component={Paper}>
                                 <Table
                                     sx={{ maxWidth: 400 }}
