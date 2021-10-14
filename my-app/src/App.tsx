@@ -2,6 +2,8 @@ import React from "react";
 // import logo from "./logo.svg";
 import logo2 from "./crypto_wallet_circle.png";
 import "./App.css";
+import ShowData from "./ShowData";
+// import App from "./App";
 
 import { createStyles, makeStyles } from "@mui/styles";
 import { ThemeProvider } from "@mui/material/styles";
@@ -10,6 +12,7 @@ import { styled } from "@mui/material/styles";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
 import Grid from "@mui/material/Grid";
+import { Typography } from "@mui/material";
 
 import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
@@ -23,6 +26,18 @@ import {
     useLayoutEffect,
     useReducer,
 } from "react";
+import { BrowserRouter, Router, Switch, Route, Link } from "react-router-dom";
+import { useHistory } from "react-router-dom";
+import { Redirect } from "react-router-dom";
+
+import axios from "axios";
+
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
 
 const Item = styled(Paper)(({ theme }) => ({
     ...theme.typography.body2,
@@ -63,6 +78,10 @@ type State = {
     helperText: string;
     isError: boolean;
     displayStatus: string;
+    openInputForm: string;
+    openDataTable: string;
+    searchInput: string;
+    dataTable: any;
 };
 
 const initialState: State = {
@@ -72,16 +91,25 @@ const initialState: State = {
     helperText: "",
     isError: false,
     displayStatus: "block",
+    openInputForm: "",
+    openDataTable: "none",
+    searchInput: "",
+    dataTable: [],
 };
 
 type Action =
     | { type: "setUsername"; payload: string }
     | { type: "setPassword"; payload: string }
+    | { type: "setSearchInput"; payload: string }
     | { type: "setIsButtonDisabled"; payload: boolean }
     | { type: "loginSuccess"; payload: string }
     | { type: "loginFailed"; payload: string }
     | { type: "setIsError"; payload: boolean }
-    | { type: "setDisplayStatus"; payload: string };
+    | { type: "setDisplayStatus"; payload: string }
+    | { type: "setOpenInputForm"; payload: string }
+    | { type: "setOpenDataTable"; payload: string }
+    | { type: "setSearchInput"; payload: string }
+    | { type: "setDataTable"; payload: any };
 
 const reducer = (state: State, action: Action): State => {
     switch (action.type) {
@@ -123,12 +151,42 @@ const reducer = (state: State, action: Action): State => {
                 displayStatus: action.payload,
                 isError: false,
             };
+        case "setOpenInputForm":
+            return {
+                ...state,
+                openInputForm: action.payload,
+            };
+        case "setOpenDataTable":
+            return {
+                ...state,
+                openDataTable: action.payload,
+            };
+        case "setSearchInput":
+            return {
+                ...state,
+                searchInput: action.payload,
+            };
+        case "setDataTable":
+            return {
+                ...state,
+                dataTable: action.payload,
+            };
     }
 };
 
 const App = () => {
+    return (
+        <div>
+            <Login />
+        </div>
+    );
+};
+
+const Login = () => {
     // const [username, setUserName] = useState();
     const [password, setPassword] = useState();
+    const [searchInput, setSearchInput] = useState();
+    const [dataTable, setDataTable] = useState();
     // const classes = useStyles();
     const [state, dispatch] = useReducer(reducer, initialState);
 
@@ -144,10 +202,17 @@ const App = () => {
                 payload: true,
             });
         }
-    }, [state.username, state.password]);
+        if (state.searchInput.trim() !== "") {
+            dispatch({
+                type: "setDataTable",
+                payload: state.dataTable,
+            });
+        }
+    }, [state.username, state.password, state.dataTable]);
 
+    const history = useHistory();
     const handleLogin = () => {
-        if (state.username === "hung" && state.password === "123456") {
+        if (state.username === "h" && state.password === "1") {
             dispatch({
                 type: "loginSuccess",
                 payload: "Login Successfully",
@@ -156,6 +221,10 @@ const App = () => {
                 type: "setDisplayStatus",
                 payload: "none",
             });
+            // navigateTo();
+            // history.push("/ShowData");
+            // window.location.href("/ShowData");
+            // return <Redirect to="/ShowData" />;
         } else {
             dispatch({
                 type: "loginFailed",
@@ -164,9 +233,40 @@ const App = () => {
         }
     };
 
+    const handleShowData = () => {
+        if (state.searchInput !== "") {
+            fetchData();
+            dispatch({
+                type: "setOpenDataTable",
+                payload: "block",
+            });
+        }
+    };
+
+    const fetchData = async () => {
+        const result = await fetch(
+            "https://api.etherscan.io/api?module=account&action=txlist&address=" +
+                state.searchInput +
+                "&startblock=0&endblock=99999999&sort=asc&apikey=JSXICG3EMIIEXRMN7TVH7CHV5A637CWSQV"
+        );
+        const data = await result.json();
+        setDataTable(data.result);
+        dispatch({
+            type: "setDataTable",
+            payload: data.result,
+        });
+        console.table(data.result);
+    };
+
     const handleKeyPress = (event: React.KeyboardEvent) => {
         if (event.keyCode === 13 || event.which === 13) {
             state.isButtonDisabled || handleLogin();
+        }
+    };
+
+    const handleSearchPress = (event: React.KeyboardEvent) => {
+        if (event.keyCode === 13 || event.which === 13) {
+            state.isButtonDisabled || handleShowData();
         }
     };
 
@@ -188,12 +288,20 @@ const App = () => {
         });
     };
 
+    const handleSearchChange: React.ChangeEventHandler<HTMLInputElement> = (
+        event
+    ) => {
+        dispatch({
+            type: "setSearchInput",
+            payload: event.target.value,
+        });
+    };
+
+    // const rows = state.dataTable;
     return (
         <div className="App">
             <header className="App-header">
                 <img src={logo2} className="App-logo" alt="logo" />
-                <h3>Welcome Back!</h3>
-                <p>The decentralized web awaits</p>
                 <Grid
                     container
                     spacing={2}
@@ -203,6 +311,96 @@ const App = () => {
                         },
                     }}>
                     <Grid
+                        display={state.displayStatus}
+                        item
+                        xs={12}
+                        sx={{
+                            "& > :not(style)": {
+                                marginTop: "2rem",
+                                background: "#282c34",
+                            },
+                        }}>
+                        <Item className="info-header">
+                            <Typography display="block" component="h3">
+                                Welcome Back!
+                            </Typography>
+                            <Typography display="block" component="p">
+                                The decentralized web awaits
+                            </Typography>
+                        </Item>
+                        <Item>
+                            <Box
+                                component="form"
+                                sx={{
+                                    "& > :not(style)": {
+                                        m: 0,
+                                        width: "35ch",
+                                    },
+                                }}
+                                noValidate
+                                autoComplete="off">
+                                <TextField
+                                    error={state.isError}
+                                    fullWidth
+                                    id="username"
+                                    type="email"
+                                    label="Username"
+                                    placeholder="Username"
+                                    margin="normal"
+                                    variant="standard"
+                                    onChange={handleUsernameChange}
+                                    onKeyPress={handleKeyPress}
+                                    sx={{
+                                        "& > :not(style)": {
+                                            color: "#fff",
+                                        },
+                                        "& > :before": {
+                                            borderBottom:
+                                                "1px solid #FFF !important",
+                                        },
+                                    }}
+                                />
+                                <TextField
+                                    id="standard-basic"
+                                    label="Password"
+                                    variant="standard"
+                                    sx={{
+                                        "& > :not(style)": {
+                                            color: "#fff",
+                                        },
+                                        "& > :before": {
+                                            borderBottom:
+                                                "1px solid #FFF !important",
+                                        },
+                                    }}
+                                    error={state.isError}
+                                    fullWidth
+                                    placeholder="Password"
+                                    margin="normal"
+                                    helperText={state.helperText}
+                                    onChange={handleSearchChange}
+                                    onKeyPress={handleKeyPress}
+                                />
+                            </Box>
+                            <Stack
+                                spacing={2}
+                                direction="row"
+                                sx={{
+                                    "& > :not(style)": {
+                                        m: 3,
+                                        width: "36ch",
+                                    },
+                                }}>
+                                <Button
+                                    variant="contained"
+                                    onClick={handleLogin}>
+                                    UNLOCK
+                                </Button>
+                            </Stack>
+                        </Item>
+                    </Grid>
+                    <Grid
+                        // display={!state.displayStatus}
                         item
                         xs={12}
                         sx={{
@@ -212,82 +410,95 @@ const App = () => {
                             },
                         }}>
                         <Item>
-                            <form>
-                                <Box
-                                    component="form"
+                            <Box
+                                component="form"
+                                sx={{
+                                    "& > :not(style)": {
+                                        m: 0,
+                                        width: "35ch",
+                                    },
+                                }}
+                                noValidate
+                                autoComplete="off">
+                                <TextField
+                                    // id="standard-basic"
+                                    label="Enter wallet address"
+                                    variant="standard"
                                     sx={{
                                         "& > :not(style)": {
-                                            m: 0,
-                                            width: "35ch",
+                                            color: "#fff",
+                                        },
+                                        "& > :before": {
+                                            borderBottom:
+                                                "1px solid #FFF !important",
                                         },
                                     }}
-                                    noValidate
-                                    autoComplete="off"
-                                    display={state.displayStatus}>
-                                    <TextField
-                                        error={state.isError}
-                                        fullWidth
-                                        id="username"
-                                        type="email"
-                                        label="Username"
-                                        placeholder="Username"
-                                        margin="normal"
-                                        variant="standard"
-                                        onChange={handleUsernameChange}
-                                        onKeyPress={handleKeyPress}
-                                        sx={{
-                                            "& > :not(style)": {
-                                                color: "#fff",
-                                            },
-                                            "& > :before": {
-                                                borderBottom:
-                                                    "1px solid #FFF !important",
-                                            },
-                                        }}
-                                    />
-                                    <TextField
-                                        id="standard-basic"
-                                        label="Password"
-                                        variant="standard"
-                                        sx={{
-                                            "& > :not(style)": {
-                                                color: "#fff",
-                                            },
-                                            "& > :before": {
-                                                borderBottom:
-                                                    "1px solid #FFF !important",
-                                            },
-                                        }}
-                                        error={state.isError}
-                                        fullWidth
-                                        placeholder="Password"
-                                        margin="normal"
-                                        helperText={state.helperText}
-                                        onChange={handlePasswordChange}
-                                        onKeyPress={handleKeyPress}
-                                    />
-                                </Box>
-                                <Stack
-                                    spacing={2}
-                                    direction="row"
-                                    display={state.displayStatus}
-                                    sx={{
-                                        "& > :not(style)": {
-                                            m: 3,
-                                            width: "36ch",
-                                        },
-                                    }}>
-                                    <Button
-                                        variant="contained"
-                                        // type="submit"
-                                        // className={classes.loginBtn}
-                                        onClick={handleLogin}
-                                        // disabled={state.isButtonDisabled}
-                                    >
-                                        UNLOCK
-                                    </Button>
-                                </Stack>
-                            </form>
+                                    fullWidth
+                                    placeholder="Enter wallet address"
+                                    margin="normal"
+                                    onChange={handleSearchChange}
+                                    onKeyPress={handleSearchPress}
+                                />
+                            </Box>
+                            <Stack
+                                spacing={2}
+                                direction="row"
+                                sx={{
+                                    "& > :not(style)": {
+                                        m: 3,
+                                        width: "36ch",
+                                    },
+                                }}>
+                                <Button
+                                    variant="contained"
+                                    onClick={handleShowData}>
+                                    Show Data
+                                </Button>
+                            </Stack>
+                            {/* <Typography
+                                display={state.openDataTable}
+                                component="p">
+                                {state.dataTable}
+                            </Typography> */}
+                            <TableContainer component={Paper}>
+                                <Table
+                                    sx={{ maxWidth: 400 }}
+                                    aria-label="simple table">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>blockNumber</TableCell>
+                                            <TableCell align="right">
+                                                timeStamp
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                hash
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {state.dataTable.map((row: any) => (
+                                            <TableRow
+                                                key={row.blockNumber}
+                                                sx={{
+                                                    "&:last-child td, &:last-child th":
+                                                        { border: 0 },
+                                                }}>
+                                                <TableCell
+                                                    component="th"
+                                                    scope="row">
+                                                    {row.blockNumber}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {row.timeStamp}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {row.hash.substr()}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Item>
                     </Grid>
                 </Grid>
