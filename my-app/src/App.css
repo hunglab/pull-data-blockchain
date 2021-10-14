@@ -3,7 +3,7 @@
 }
 
 .App-logo {
-    height: 40vmin;
+    height: 20vmin;
     pointer-events: none;
 }
 
@@ -45,8 +45,6 @@
     color: #fff;
     display: block;
     font-size: 2em;
-    margin-block-start: 1em;
-    margin-block-end: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
     font-weight: bold;
@@ -55,8 +53,8 @@
     color: #fff;
     display: block;
     font-size: 1.5em;
-    margin-block-start: 2em;
-    margin-block-end: 2em;
+    /* margin-block-start: 2em;
+    margin-block-end: 2em; */
     margin-inline-start: 0px;
     margin-inline-end: 0px;
 }
